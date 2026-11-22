@@ -25,12 +25,14 @@ class TrackingService : Service() {
         const val ACTION_RESUME = "resume"
         const val ACTION_STOP = "stop"
         const val EXTRA_MODE = "mode"
+        const val EXTRA_SAVE = "save"
         private const val CHANNEL = "tracking"
         private const val NOTIF_ID = 7
 
-        fun send(ctx: Context, action: String, mode: TrackMode? = null) {
+        fun send(ctx: Context, action: String, mode: TrackMode? = null, save: Boolean = true) {
             val i = Intent(ctx, TrackingService::class.java).setAction(action)
             mode?.let { i.putExtra(EXTRA_MODE, it.name) }
+            i.putExtra(EXTRA_SAVE, save)
             if (action == ACTION_START) ctx.startForegroundService(i) else ctx.startService(i)
         }
     }
@@ -39,6 +41,7 @@ class TrackingService : Service() {
     private var tracker: DistanceTracker? = null
     private var mode = TrackMode.WALK
     private var accumulatedMs = 0L
+    private var startWallTime = 0L
     private var runningSince = 0L
     private var wakeLock: PowerManager.WakeLock? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -74,6 +77,7 @@ class TrackingService : Service() {
                 mode = intent.getStringExtra(EXTRA_MODE)?.let { TrackMode.valueOf(it) } ?: TrackMode.WALK
                 tracker = DistanceTracker(mode)
                 accumulatedMs = 0
+                startWallTime = System.currentTimeMillis()
                 startFg()
                 startUpdates()
             }
@@ -88,7 +92,24 @@ class TrackingService : Service() {
                 startUpdates()
             }
             ACTION_STOP -> {
+                val wasRunning = TrackingRepo.state.value.status == Status.RUNNING
                 stopUpdates()
+                if (wasRunning) accumulatedMs += SystemClock.elapsedRealtime() - runningSince
+                val t = tracker
+                if (intent.getBooleanExtra(EXTRA_SAVE, true) && t != null && t.totalM >= 1.0) {
+                    TripStore.add(
+                        this, Trip(
+                            id = startWallTime,
+                            endTime = System.currentTimeMillis(),
+                            mode = mode,
+                            distanceM = t.totalM,
+                            elapsedMs = accumulatedMs,
+                            movingMs = t.movingMs,
+                            maxSpeedMs = t.maxSpeedMs
+                        )
+                    )
+                }
+                tracker = null
                 TrackingRepo.state.value = TrackingRepo.state.value.copy(status = Status.IDLE, speedMs = 0.0)
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()

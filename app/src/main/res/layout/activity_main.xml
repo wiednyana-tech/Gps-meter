@@ -101,5 +101,13 @@
             android:layout_marginTop="8dp"
             android:text="Selesai"
             android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnHistory"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="8dp"
+            android:text="📋 Riwayat Perjalanan" />
     </LinearLayout>
 </ScrollView>

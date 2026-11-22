@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvGps: TextView
     private lateinit var btnStart: Button
     private lateinit var btnStop: Button
+    private lateinit var btnHistory: Button
     private lateinit var modeGroup: MaterialButtonToggleGroup
 
     private val permLauncher = registerForActivityResult(
@@ -56,6 +57,8 @@ class MainActivity : AppCompatActivity() {
         tvGps = findViewById(R.id.tvGps)
         btnStart = findViewById(R.id.btnStart)
         btnStop = findViewById(R.id.btnStop)
+        btnHistory = findViewById(R.id.btnHistory)
+        btnHistory.setOnClickListener { startActivity(Intent(this, HistoryActivity::class.java)) }
         modeGroup = findViewById(R.id.modeGroup)
         modeGroup.check(R.id.btnWalk)
 
@@ -70,7 +73,13 @@ class MainActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle("Selesai merekam?")
                 .setMessage("Jarak terakhir: ${Format.distance(TrackingRepo.state.value.distanceM)}")
-                .setPositiveButton("Selesai") { _, _ -> TrackingService.send(this, TrackingService.ACTION_STOP) }
+                .setPositiveButton("Simpan") { _, _ ->
+                    TrackingService.send(this, TrackingService.ACTION_STOP, save = true)
+                    Toast.makeText(this, "Tersimpan di Riwayat", Toast.LENGTH_SHORT).show()
+                }
+                .setNeutralButton("Buang") { _, _ ->
+                    TrackingService.send(this, TrackingService.ACTION_STOP, save = false)
+                }
                 .setNegativeButton("Batal", null)
                 .show()
         }
@@ -130,6 +139,7 @@ class MainActivity : AppCompatActivity() {
             Status.PAUSED -> "Lanjut"
         }
         btnStop.visibility = if (s.status == Status.IDLE) View.GONE else View.VISIBLE
+        btnHistory.visibility = if (s.status == Status.IDLE) View.VISIBLE else View.GONE
         val idle = s.status == Status.IDLE
         for (i in 0 until modeGroup.childCount) modeGroup.getChildAt(i).isEnabled = idle
     }
