@@ -60,6 +60,44 @@ object TripStore {
     }
 
     fun add(ctx: Context, trip: Trip) = save(ctx, load(ctx) + trip)
-    fun delete(ctx: Context, id: Long) = save(ctx, load(ctx).filterNot { it.id == id })
-    fun clear(ctx: Context) = save(ctx, emptyList())
+    fun delete(ctx: Context, id: Long) {
+        save(ctx, load(ctx).filterNot { it.id == id })
+        trackFile(ctx, id).delete()
+    }
+
+    fun clear(ctx: Context) {
+        save(ctx, emptyList())
+        ctx.filesDir.listFiles { f -> f.name.startsWith("track_") }?.forEach { it.delete() }
+    }
+
+    // ---- Rute (disimpan per perjalanan agar daftar riwayat tetap ringan) ----
+    private fun trackFile(ctx: Context, id: Long) = File(ctx.filesDir, "track_$id.json")
+
+    fun saveTrack(ctx: Context, id: Long, segments: List<List<DoubleArray>>) {
+        val arr = JSONArray()
+        segments.filter { it.size >= 2 }.forEach { seg ->
+            val s = JSONArray()
+            seg.forEach { p ->
+                s.put(JSONArray().put(Math.round(p[0] * 1e6) / 1e6).put(Math.round(p[1] * 1e6) / 1e6))
+            }
+            arr.put(s)
+        }
+        trackFile(ctx, id).writeText(arr.toString())
+    }
+
+    fun loadTrack(ctx: Context, id: Long): List<List<DoubleArray>> {
+        val f = trackFile(ctx, id)
+        if (!f.exists()) return emptyList()
+        return try {
+            val arr = JSONArray(f.readText())
+            (0 until arr.length()).map { i ->
+                val s = arr.getJSONArray(i)
+                (0 until s.length()).map { j ->
+                    val p = s.getJSONArray(j); doubleArrayOf(p.getDouble(0), p.getDouble(1))
+                }
+            }
+        } catch (e: Exception) { emptyList() }
+    }
+
+    fun hasTrack(ctx: Context, id: Long) = trackFile(ctx, id).exists()
 }

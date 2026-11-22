@@ -46,6 +46,9 @@ class DistanceTracker(private val mode: TrackMode) {
     var acceptedCount = 0; private set
     var rejectedCount = 0; private set
 
+    /** Rute yang direkam: beberapa segmen (terputus saat jeda), tiap titik = [lat, lng]. */
+    val segments: MutableList<MutableList<DoubleArray>> = mutableListOf()
+
     private val kalman = LatLngKalman(mode.processNoiseMs)
     private var anchorLat = 0.0
     private var anchorLng = 0.0
@@ -99,6 +102,7 @@ class DistanceTracker(private val mode: TrackMode) {
         if (warmup < 3 || !hasAnchor) {
             warmup++
             setAnchor(lat, lng, f.timeMs)
+            if (warmup >= 3) segments.add(mutableListOf(doubleArrayOf(lat, lng)))
             return false
         }
 
@@ -130,6 +134,7 @@ class DistanceTracker(private val mode: TrackMode) {
         movingMs += f.timeMs - anchorTime
         if (lastSpeedMs > maxSpeedMs && lastSpeedMs <= mode.maxSpeedMs) maxSpeedMs = lastSpeedMs
         acceptedCount++
+        segments.lastOrNull()?.add(doubleArrayOf(lat, lng))
         setAnchor(lat, lng, f.timeMs)
         return true
     }

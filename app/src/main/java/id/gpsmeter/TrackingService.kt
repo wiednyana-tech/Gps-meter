@@ -108,6 +108,7 @@ class TrackingService : Service() {
                             maxSpeedMs = t.maxSpeedMs
                         )
                     )
+                    TripStore.saveTrack(this, startWallTime, t.segments)
                 }
                 tracker = null
                 TrackingRepo.state.value = TrackingRepo.state.value.copy(status = Status.IDLE, speedMs = 0.0)

@@ -1,5 +1,6 @@
 package id.gpsmeter
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -65,9 +66,18 @@ class HistoryActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(Format.distance(t.distanceM))
             .setMessage(msg)
-            .setPositiveButton("Tutup", null)
+            .setPositiveButton("🗺 Lihat Peta") { _, _ -> openMap(t) }
+            .setNeutralButton("Tutup", null)
             .setNegativeButton("Hapus") { _, _ -> confirmDelete(t) }
             .show()
+    }
+
+    private fun openMap(t: Trip) {
+        if (!TripStore.hasTrack(this, t.id)) {
+            Toast.makeText(this, "Perjalanan ini direkam sebelum fitur peta ada, jadi tidak punya data rute", Toast.LENGTH_LONG).show()
+            return
+        }
+        startActivity(Intent(this, MapActivity::class.java).putExtra(MapActivity.EXTRA_ID, t.id))
     }
 
     private fun confirmDelete(t: Trip) {
