@@ -2,7 +2,11 @@ name: Build APK
 
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -17,7 +21,16 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk GpsMeter.apk
       - uses: actions/upload-artifact@v4
         with:
           name: GpsMeter-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: GpsMeter.apk
+      - name: Terbitkan ke Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v1.0.${{ github.run_number }}" GpsMeter.apk \
+            --title "GPS Meter v1.0.${{ github.run_number }}" \
+            --notes "Unduh GpsMeter.apk di bawah lalu pasang di HP Android." \
+            --latest
