@@ -7,7 +7,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical"
         android:padding="20dp">
 
@@ -109,5 +109,21 @@
             android:layout_height="56dp"
             android:layout_marginTop="8dp"
             android:text="📋 Riwayat Perjalanan" />
+
+        <!-- Pendorong agar teks copyright selalu di bagian paling bawah -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/tvCopyright"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:alpha="0.6"
+            android:gravity="center"
+            android:text="© 2026 by Wiednyana"
+            android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>
